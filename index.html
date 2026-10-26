@@ -45,7 +45,25 @@ async function startGPS(){const vid=$('driverVehicle').value;if(!vid){toast('เ
 function stopGPS(){if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;$('startGps').disabled=false;$('stopGps').disabled=true;$('gpsStatus').textContent='หยุดส่งตำแหน่งแล้ว'}
 async function addVehicle(){if(profile.role!=='admin'){toast('ต้องเป็นผู้ดูแลระบบ');return}const code=$('vehicleCode').value.trim(),name=$('vehicleName').value.trim(),driver=$('driverId').value.trim()||null;if(!code){toast('กรอกรหัสรถก่อน');return}const {error}=await sb.from('vehicles').insert({vehicle_code:code,vehicle_name:name,driver_id:driver});if(error){toast('บันทึกรถไม่สำเร็จ: '+error.message);return}toast('เพิ่มรถสำเร็จ');$('vehicleCode').value='';$('vehicleName').value='';$('driverId').value='';await loadData()}
 async function addShipment(){if(profile.role!=='admin'){toast('ต้องเป็นผู้ดูแลระบบ');return}const code=$('trackingCode').value.trim(),recipient=$('recipientName').value.trim(),status=$('shipmentStatus').value,vehicle=$('shipmentVehicle').value||null;if(!code){toast('กรอกเลขพัสดุก่อน');return}const {error}=await sb.from('shipments').insert({tracking_number:code,recipient_name:recipient,status,vehicle_id:vehicle});if(error){toast('บันทึกพัสดุไม่สำเร็จ: '+error.message);return}toast('เพิ่มพัสดุสำเร็จ');$('trackingCode').value='';$('recipientName').value='';await loadData()}
-$('saveConfig').onclick=()=>{const url=$('sbUrl').value.trim().replace(/\/$/,''),key=$('sbKey').value.trim();if(!url.startsWith('https://')||!key){toast('กรอก Project URL และ anon/publishable key ให้ครบ');return}localStorage.setItem('gps_sb_url',url);localStorage.setItem('gps_sb_key',key);setup()};$('changeConfig').onclick=()=>{const c=cfg();$('sbUrl').value=c.url;$('sbKey').value=c.key;showOnly('setupScreen')};$('loginBtn').onclick=()=>authAction('login');$('signupBtn').onclick=()=>authAction('signup');$('logoutBtn').onclick=async()=>{stopGPS();if(refreshTimer)clearInterval(refreshTimer);await sb.auth.signOut();user=null;profile=null;$('logoutBtn').classList.add('hidden');showOnly('authScreen')};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));$('refreshBtn').onclick=()=>loadData();$('startGps').onclick=startGPS;$('stopGps').onclick=stopGPS;$('addVehicle').onclick=addVehicle;$('addShipment').onclick=addShipment;$('searchShipment').onclick=()=>{const q=$('trackingSearch').value.trim().toLowerCase();renderShipments(shipments.filter(s=>String(s.tracking_number).toLowerCase()===q))};$('showAllShipments').onclick=()=>renderShipments();setup();
+$('saveConfig').onclick=()=>{const url=$('sbUrl').value.trim().replace(/\/$/,''),key=$('sbKey').value.trim();if(!url.startsWith('https://')||!key){toast('กรอก Project URL และ anon/publishable key ให้ครบ');return}localStorage.setItem('gps_sb_url',url);localStorage.setItem('gps_sb_key',key);setup()};$('changeConfig').onclick=()=>{const c=cfg();$('sbUrl').value=c.url;$('sbKey').value=c.key;showOnly('setupScreen')};$('loginBtn').onclick=()=>authAction('login');$('signupBtn').onclick=()=>authAction('signup');$('logoutBtn').onclick=async()=>{stopGPS();if(refreshTimer)clearInterval(refreshTimer);await sb.auth.signOut();user=null;profile=null;$('logoutBtn').classList.add('hidden');showOnly('authScreen')};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));$('refreshBtn').onclick=()=>loadData();$('startGps').onclick=startGPS;$('stopGps').onclick=stopGPS;$('addVehicle').onclick=addVehicle;$('addShipment').onclick=addShipment;$('searchShipment').onclick=()=>{
+  const q=$('trackingSearch').value.trim().toLowerCase();
+
+  if(!q){
+    renderShipments();
+    toast('กรุณากรอกเลขพัสดุ');
+    return;
+  }
+
+  const results=shipments.filter(s=>
+    String(s.tracking_number||'').trim().toLowerCase().includes(q)
+  );
+
+  renderShipments(results);
+
+  if(results.length===0){
+    toast('ไม่พบพัสดุเลขนี้');
+  }
+};
 })();
 </script>
 </body></html>
