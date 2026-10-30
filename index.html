@@ -82,7 +82,50 @@ function renderStats(){$('statVehicles').textContent=vehicles.length;$('statLoca
 function renderVehicles(){const html=vehicles.map(v=>`<div class="item"><div><b>🚚 ${esc(vName(v))}</b><div class="small muted">${esc(vCode(v))} · ${hasCoords(v)?'มีพิกัด':'ยังไม่มีพิกัด'}</div>${v.last_seen?`<div class="small muted">อัปเดต: ${new Date(v.last_seen).toLocaleString('th-TH')}</div>`:''}</div><span class="badge ${hasCoords(v)?'green':'gray'}">${hasCoords(v)?'ออนไลน์/มีพิกัด':'ออฟไลน์'}</span></div>`).join('')||'<div class="empty">ยังไม่มีรถในระบบ</div>';$('vehicleList').innerHTML=html;$('manageVehicleList').innerHTML=html}
 function renderMap(){if(!map)return;const valid=vehicles.filter(hasCoords);valid.forEach(v=>{const key=String(v.id),lat=Number(v.latitude),lng=Number(v.longitude),content=`<b>🚚 ${esc(vName(v))}</b><br>รหัส: ${esc(vCode(v))}<br>พิกัด: ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>อัปเดต: ${v.last_seen?new Date(v.last_seen).toLocaleString('th-TH'):'-'}`;if(markers[key])markers[key].setLatLng([lat,lng]).setPopupContent(content);else markers[key]=L.marker([lat,lng]).addTo(map).bindPopup(content)});Object.keys(markers).forEach(k=>{if(!valid.some(v=>String(v.id)===k)){map.removeLayer(markers[k]);delete markers[k]}});if(valid.length===1)map.setView([Number(valid[0].latitude),Number(valid[0].longitude)],14);else if(valid.length>1){const group=L.featureGroup(valid.map(v=>markers[String(v.id)]).filter(Boolean));if(group.getLayers().length)map.fitBounds(group.getBounds().pad(.15),{maxZoom:13})}}
 function renderVehicleSelects(){const opts=vehicles.map(v=>`<option value="${esc(v.id)}">${esc(vCode(v))} — ${esc(vName(v))}</option>`).join('');$('driverVehicle').innerHTML='<option value="">เลือกรถ</option>'+opts;$('shipmentVehicle').innerHTML='<option value="">ไม่ระบุรถ</option>'+opts}
-function renderShipments(rows=shipments){$('shipmentResults').innerHTML=rows.length?`<table><thead><tr><th>เลขพัสดุ</th><th>ผู้รับ</th><th>สถานะ</th><th>รถ</th></tr></thead><tbody>${rows.map(s=>{const v=vehicles.find(x=>String(x.id)===String(s.vehicle_id));return`<tr><td><b>${esc(s.tracking_number)}</b></td><td>${esc(s.recipient_name||'-')}</td><td><span class="badge ${statusClass(s.status)}">${esc(s.status||'-')}</span></td><td>${esc(v?vCode(v):'-')}</td></tr>`}).join('')}</tbody></table>`:'<div class="empty">ไม่พบพัสดุ</div>'}
+function renderShipments(rows=shipments){
+  const canUpdate=profile?.role==='admin'||profile?.role==='driver';
+
+  $('shipmentResults').innerHTML=rows.length?`
+    <table>
+      <thead>
+        <tr>
+          <th>เลขพัสดุ</th>
+          <th>ผู้รับ</th>
+          <th>สถานะ</th>
+          <th>รถ</th>
+          ${canUpdate?'<th>เปลี่ยนสถานะ</th>':''}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(s=>{
+          const v=vehicles.find(x=>String(x.id)===String(s.vehicle_id));
+          return `
+            <tr>
+              <td><b>${esc(s.tracking_number)}</b></td>
+              <td>${esc(s.recipient_name||'-')}</td>
+              <td><span class="badge ${statusClass(s.status)}">${esc(s.status||'-')}</span></td>
+              <td>${esc(v?vCode(v):'-')}</td>
+              ${canUpdate?`
+                <td>
+                  <select id="status-${esc(s.id)}">
+                    ${['รับพัสดุแล้ว','กำลังขนส่ง','จัดส่งสำเร็จ','มีปัญหา'].map(st=>
+                      `<option value="${st}" ${s.status===st?'selected':''}>${st}</option>`
+                    ).join('')}
+                  </select>
+                  <button class="primary" data-update-shipment="${esc(s.id)}">บันทึก</button>
+                </td>
+              `:''}
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `:'<div class="empty">ไม่พบพัสดุ</div>';
+
+  $('shipmentResults').querySelectorAll('[data-update-shipment]').forEach(btn=>{
+    btn.onclick=()=>updateShipmentStatus(btn.dataset.updateShipment);
+  });
+}
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function startGPS(){const vid=$('driverVehicle').value;if(!vid){toast('เลือกรถก่อนเริ่มส่ง GPS');return}if(!navigator.geolocation){toast('เบราว์เซอร์นี้ไม่รองรับ GPS');return}if(!window.isSecureContext){toast('ต้องเปิดเว็บไซต์ผ่าน HTTPS จึงใช้ GPS ได้');return}const v=vehicles.find(x=>String(x.id)===String(vid));if(!v){toast('ไม่พบรถ');return}if(v.driver_id&&v.driver_id!==user.id&&profile.role!=='admin'){toast('รถคันนี้ถูกกำหนดให้คนขับบัญชีอื่น');return}$('startGps').disabled=true;$('stopGps').disabled=false;$('gpsStatus').textContent='กำลังขอสิทธิ์ตำแหน่งจากโทรศัพท์...';gpsWatch=navigator.geolocation.watchPosition(async pos=>{const c=pos.coords;try{const{error}=await sb.rpc('update_vehicle_location',{p_vehicle_id:vid,p_lat:c.latitude,p_lng:c.longitude});if(error)throw error;$('gpsStatus').textContent=`ส่ง GPS สำเร็จ · ${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)} · ความแม่นยำ ±${Math.round(c.accuracy)} เมตร`;await loadData(false)}catch(e){$('gpsStatus').textContent='ส่งพิกัดไม่สำเร็จ: '+e.message;console.error(e)}},err=>{$('gpsStatus').textContent='GPS Error: '+err.message;$('startGps').disabled=false;$('stopGps').disabled=true;gpsWatch=null;toast('ตรวจสอบการอนุญาต Location ของเบราว์เซอร์')},{enableHighAccuracy:true,maximumAge:3000,timeout:20000})}
 function stopGPS(){if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;$('startGps').disabled=false;$('stopGps').disabled=true;$('gpsStatus').textContent='หยุดส่งตำแหน่งแล้ว'}
