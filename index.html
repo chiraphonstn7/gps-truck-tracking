@@ -295,7 +295,46 @@ async function addVehicle(){
   }
 }
 
-async function addShipment(){if(profile?.role!=='admin'){toast('ต้องเป็นผู้ดูแลระบบ');return}const code=$('trackingCode').value.trim(),recipient=$('recipientName').value.trim(),status=$('shipmentStatus').value,vehicle=$('shipmentVehicle').value||null;if(!code){toast('กรอกเลขพัสดุก่อน');return}try{const{error}=await sb.from('shipments').insert({tracking_number:code,recipient_name:recipient,status,vehicle_id:vehicle});if(error)throw error;toast('เพิ่มพัสดุสำเร็จ');$('trackingCode').value='';$('recipientName').value='';await loadData()}catch(e){toast('บันทึกพัสดุไม่สำเร็จ: '+e.message)}}
+async function addShipment(){
+  if(profile?.role!=='admin'){
+    toast('ต้องเป็นผู้ดูแลระบบ');
+    return;
+  }
+
+  const code=$('trackingCode').value.trim();
+  const recipient=$('recipientName').value.trim();
+  const destination=$('shipmentDestination').value.trim();
+  const status=$('shipmentStatus').value;
+  const vehicle=$('shipmentVehicle').value||null;
+
+  if(!code){
+    toast('กรอกเลขพัสดุก่อน');
+    return;
+  }
+
+  try{
+    const{error}=await sb.from('shipments').insert({
+      tracking_number:code,
+      recipient_name:recipient,
+      destination:destination,
+      status:status,
+      vehicle_id:vehicle
+    });
+
+    if(error)throw error;
+
+    toast('เพิ่มพัสดุสำเร็จ');
+    $('trackingCode').value='';
+    $('recipientName').value='';
+    $('shipmentDestination').value='';
+
+    await loadData();
+
+  }catch(e){
+    console.error(e);
+    toast('บันทึกพัสดุไม่สำเร็จ: '+e.message);
+  }
+}
 $('loginBtn').onclick=()=>{
   toast('กำลังเข้าสู่ระบบ');
   authAction('login');
