@@ -106,6 +106,11 @@ ${profile?.role==='admin'?'<th>จัดการ</th>':''}
               <td>${esc(s.recipient_name||'-')}</td>
               <td><span class="badge ${statusClass(s.status)}">${esc(s.status||'-')}</span></td>
               <td>${esc(v?vCode(v):'-')}</td>
+              ${profile?.role==='admin'?`
+  <td>
+    <button class="secondary" data-edit-shipment="${esc(s.id)}">✏️ แก้ไข</button>
+  </td>
+`:''}
               ${canUpdate?`
                 <td>
                   <select id="status-${esc(s.id)}">
