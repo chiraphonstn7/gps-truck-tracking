@@ -43,11 +43,11 @@ const SUPABASE_ANON_KEY = 'sb_publishable_NYRO5JIzGxGe8o_VVK1A_A_fqNLWcHD';
 (()=>{'use strict';
 const $=id=>document.getElementById(id);let sb=null,user=null,profile=null,map=null,markers={},gpsWatch=null,refreshTimer=null,vehicles=[],shipments=[];
 const statusClass = s => {
-  if (s === ’มีปัญหา‘) return ’red‘;
-  if (s === ’จัดส่งสำเร็จ‘) return ’green‘;
-  if (s === ’กำลังขนส่ง‘) return ’blue‘;
-  if (s === ’รับพัสดุแล้ว‘) return ’gray‘;
-  return ’gray‘;
+  if (s === 'มีปัญหา') return 'red';
+  if (s === 'จัดส่งสำเร็จ') return 'green';
+  if (s === 'กำลังขนส่ง') return 'blue';
+  if (s === 'รับพัสดุแล้ว') return 'gray';
+  return 'gray';
 };
 function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.add('hidden'),4500)}
 function showOnly(id){['authScreen','appScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
@@ -245,9 +245,9 @@ async function addVehicle(){
 }
 
 async function addShipment(){if(profile?.role!=='admin'){toast('ต้องเป็นผู้ดูแลระบบ');return}const code=$('trackingCode').value.trim(),recipient=$('recipientName').value.trim(),status=$('shipmentStatus').value,vehicle=$('shipmentVehicle').value||null;if(!code){toast('กรอกเลขพัสดุก่อน');return}try{const{error}=await sb.from('shipments').insert({tracking_number:code,recipient_name:recipient,status,vehicle_id:vehicle});if(error)throw error;toast('เพิ่มพัสดุสำเร็จ');$('trackingCode').value='';$('recipientName').value='';await loadData()}catch(e){toast('บันทึกพัสดุไม่สำเร็จ: '+e.message)}}
-$(’loginBtn‘).onclick=()=>{
-  toast(’ปุ่มเข้าสู่ระบบทำงานแล้ว‘);
-  authAction(’login‘);
+$('loginBtn').onclick=()=>{
+  toast('ปุ่มเข้าสู่ระบบทำงานแล้ว');
+  authAction('login‘);
 };
 $('signupBtn').onclick=()=>authAction('signup');$('password').addEventListener('keydown',e=>{if(e.key==='Enter')authAction('login')});$('logoutBtn').onclick=async()=>{stopGPS();if(refreshTimer)clearInterval(refreshTimer);try{if(sb)await sb.auth.signOut()}catch(e){console.warn(e)}user=null;profile=null;vehicles=[];shipments=[];$('logoutBtn').classList.add('hidden');$('userLabel').textContent='';showOnly('authScreen')};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));$('refreshBtn').onclick=()=>loadData();$('startGps').onclick=startGPS;$('stopGps').onclick=stopGPS;$('addVehicle').onclick=addVehicle;$('addShipment').onclick=addShipment;$('searchShipment').onclick=()=>{const q=$('trackingSearch').value.trim().toLowerCase();if(!q){renderShipments();toast('กรุณากรอกเลขพัสดุ');return}const rows=shipments.filter(s=>String(s.tracking_number||'').trim().toLowerCase().includes(q));renderShipments(rows);if(!rows.length)toast('ไม่พบพัสดุเลขนี้')};$('trackingSearch').addEventListener('keydown',e=>{if(e.key==='Enter')$('searchShipment').click()});$('showAllShipments').onclick=()=>{$('trackingSearch').value='';renderShipments(shipments)};window.addEventListener('unhandledrejection',e=>{console.error(e.reason);toast('เกิดข้อผิดพลาด: '+(e.reason?.message||e.reason||'ไม่ทราบสาเหตุ'))});
 // เริ่มต้นระบบทันที: ผู้ใช้ทุกคนที่เปิดลิงก์เดียวกันจะใช้ค่าตั้งค่า Supabase จากไฟล์นี้
