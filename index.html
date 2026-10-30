@@ -126,6 +126,7 @@ function renderShipments(rows=shipments){
     btn.onclick=()=>updateShipmentStatus(btn.dataset.updateShipment);
   });
 }
+
 async function updateShipmentStatus(id){
   if(!['admin','driver'].includes(profile?.role)){
     toast('ไม่มีสิทธิ์เปลี่ยนสถานะ');
@@ -142,15 +143,26 @@ async function updateShipmentStatus(id){
       .from('shipments')
       .update({status:newStatus})
       .eq('id',id)
-      .select('id');
+      .select('id,status');
 
     if(error)throw error;
+
     if(!data||data.length===0){
       throw new Error('ไม่มีสิทธิ์แก้ไขพัสดุนี้ หรือไม่พบพัสดุ');
     }
 
+    // อัปเดตข้อมูลในระบบบนหน้าจอทันที
+    const shipment=shipments.find(s=>String(s.id)===String(id));
+    if(shipment){
+      shipment.status=data[0].status;
+    }
+
+    // แสดงรายการใหม่ทันที
+    renderShipments();
+    renderStats();
+
     toast('เปลี่ยนสถานะสำเร็จ');
-    await loadData();
+
   }catch(e){
     console.error(e);
     toast('เปลี่ยนสถานะไม่สำเร็จ: '+e.message);
