@@ -471,7 +471,119 @@ async function addVehicle(){
     toast('บันทึกรถไม่สำเร็จ: '+e.message);
   }
 }
+async function editVehicle(id){
+  if(profile?.role!=='admin'){
+    toast('ต้องเป็นผู้ดูแลระบบ');
+    return;
+  }
 
+  const v=vehicles.find(x=>String(x.id)===String(id));
+  if(!v){
+    toast('ไม่พบข้อมูลรถ');
+    return;
+  }
+
+  // แก้ไขทะเบียน/รหัสรถ
+  const code=prompt('แก้ไขทะเบียน/รหัสรถ:',v.plate_number||'');
+  if(code===null)return;
+
+  if(!code.trim()){
+    toast('ทะเบียน/รหัสรถห้ามว่าง');
+    return;
+  }
+
+  // แก้ไขชื่อรถ
+  const name=prompt('แก้ไขชื่อรถ:',v.vehicle_name||'');
+  if(name===null)return;
+
+  // สร้างหน้าต่างเลือกคนขับ
+  const overlay=document.createElement('div');
+  overlay.style.cssText=
+    'position:fixed;inset:0;background:#0008;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+  const box=document.createElement('div');
+  box.style.cssText=
+    'background:white;width:100%;max-width:400px;padding:22px;border-radius:16px;';
+
+  const title=document.createElement('h3');
+  title.textContent='เลือกพนักงานขับรถ';
+  title.style.marginTop='0';
+
+  const select=document.createElement('select');
+  select.style.cssText=
+    'width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;margin:12px 0 20px;font:inherit;';
+
+  const empty=document.createElement('option');
+  empty.value='';
+  empty.textContent='ไม่กำหนดคนขับ';
+  select.appendChild(empty);
+
+  drivers.forEach(d=>{
+    const option=document.createElement('option');
+    option.value=d.id;
+    option.textContent=d.email||d.id;
+    select.appendChild(option);
+  });
+
+  select.value=String(v.driver_id||'');
+
+  const buttons=document.createElement('div');
+  buttons.style.cssText='display:flex;gap:10px;';
+
+  const cancel=document.createElement('button');
+  cancel.textContent='ยกเลิก';
+  cancel.className='secondary';
+  cancel.style.flex='1';
+
+  const confirm=document.createElement('button');
+  confirm.textContent='บันทึก';
+  confirm.className='primary';
+  confirm.style.flex='1';
+
+  buttons.append(cancel,confirm);
+  box.append(title,select,buttons);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const driverId=await new Promise(resolve=>{
+    cancel.onclick=()=>{
+      overlay.remove();
+      resolve(null);
+    };
+
+    confirm.onclick=()=>{
+      const value=select.value;
+      overlay.remove();
+      resolve(value);
+    };
+  });
+
+  if(driverId===null)return;
+
+  try{
+    const{data,error}=await sb.from('vehicles')
+      .update({
+        plate_number:code.trim(),
+        vehicle_name:name.trim()||code.trim(),
+        driver_id:driverId||null
+      })
+      .eq('id',id)
+      .select('id');
+
+    if(error)throw error;
+
+    if(!data||data.length===0){
+      throw new Error('ไม่มีสิทธิ์แก้ไขรถ หรือไม่พบรถคันนี้');
+    }
+
+    toast('แก้ไขข้อมูลรถสำเร็จ');
+    await loadData();
+
+  }catch(e){
+    console.error(e);
+    toast('แก้ไขรถไม่สำเร็จ: '+e.message);
+  }
+}
 async function addShipment(){
   if(profile?.role!=='admin'){
     toast('ต้องเป็นผู้ดูแลระบบ');
