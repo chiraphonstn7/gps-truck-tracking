@@ -123,9 +123,25 @@ async function loadData(showErr=true){
     if(sr.error)throw new Error('โหลดพัสดุไม่สำเร็จ: '+sr.error.message);
 
     vehicles=vr.data||[];
-    shipments=sr.data||[];
+shipments=sr.data||[];
 
-    renderVehicles();
+// โหลดรายชื่อบัญชีคนขับ เฉพาะ Admin
+drivers=[];
+if(profile?.role==='admin'){
+  const dr=await sb.from('profiles')
+    .select('id,email')
+    .eq('role','driver')
+    .order('email',{ascending:true});
+
+  if(dr.error){
+    console.error('โหลดรายชื่อคนขับไม่สำเร็จ:',dr.error.message);
+    toast('โหลดรายชื่อคนขับไม่สำเร็จ: ตรวจสอบสิทธิ์อ่าน profiles');
+  }else{
+    drivers=dr.data||[];
+  }
+}
+
+renderVehicles();
     renderShipments();
     renderStats();
     renderVehicleSelects();
