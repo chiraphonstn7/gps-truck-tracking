@@ -254,7 +254,7 @@ async function updateShipmentStatus(id){
     console.error(e);
     toast('เปลี่ยนสถานะไม่สำเร็จ: '+e.message);
   }
-}btn.onclick=()=>editShipment(btn.dataset.editShipment);
+}
       async function editShipment(id){
   if(profile?.role!=='admin'){
     toast('ต้องเป็นผู้ดูแลระบบ');
