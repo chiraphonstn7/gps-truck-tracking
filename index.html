@@ -94,6 +94,7 @@ function renderShipments(rows=shipments){
           <th>สถานะ</th>
           <th>รถ</th>
           ${canUpdate?'<th>เปลี่ยนสถานะ</th>':''}
+${profile?.role==='admin'?'<th>จัดการ</th>':''}
         </tr>
       </thead>
       <tbody>
