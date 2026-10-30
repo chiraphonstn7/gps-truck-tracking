@@ -126,7 +126,37 @@ function renderShipments(rows=shipments){
     btn.onclick=()=>updateShipmentStatus(btn.dataset.updateShipment);
   });
 }
-function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+async function updateShipmentStatus(id){
+  if(!['admin','driver'].includes(profile?.role)){
+    toast('ไม่มีสิทธิ์เปลี่ยนสถานะ');
+    return;
+  }
+
+  const select=$('status-'+id);
+  if(!select)return;
+
+  const newStatus=select.value;
+
+  try{
+    const {data,error}=await sb
+      .from('shipments')
+      .update({status:newStatus})
+      .eq('id',id)
+      .select('id');
+
+    if(error)throw error;
+    if(!data||data.length===0){
+      throw new Error('ไม่มีสิทธิ์แก้ไขพัสดุนี้ หรือไม่พบพัสดุ');
+    }
+
+    toast('เปลี่ยนสถานะสำเร็จ');
+    await loadData();
+  }catch(e){
+    console.error(e);
+    toast('เปลี่ยนสถานะไม่สำเร็จ: '+e.message);
+  }
+}
+      function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function startGPS(){const vid=$('driverVehicle').value;if(!vid){toast('เลือกรถก่อนเริ่มส่ง GPS');return}if(!navigator.geolocation){toast('เบราว์เซอร์นี้ไม่รองรับ GPS');return}if(!window.isSecureContext){toast('ต้องเปิดเว็บไซต์ผ่าน HTTPS จึงใช้ GPS ได้');return}const v=vehicles.find(x=>String(x.id)===String(vid));if(!v){toast('ไม่พบรถ');return}if(v.driver_id&&v.driver_id!==user.id&&profile.role!=='admin'){toast('รถคันนี้ถูกกำหนดให้คนขับบัญชีอื่น');return}$('startGps').disabled=true;$('stopGps').disabled=false;$('gpsStatus').textContent='กำลังขอสิทธิ์ตำแหน่งจากโทรศัพท์...';gpsWatch=navigator.geolocation.watchPosition(async pos=>{const c=pos.coords;try{const{error}=await sb.rpc('update_vehicle_location',{p_vehicle_id:vid,p_lat:c.latitude,p_lng:c.longitude});if(error)throw error;$('gpsStatus').textContent=`ส่ง GPS สำเร็จ · ${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)} · ความแม่นยำ ±${Math.round(c.accuracy)} เมตร`;await loadData(false)}catch(e){$('gpsStatus').textContent='ส่งพิกัดไม่สำเร็จ: '+e.message;console.error(e)}},err=>{$('gpsStatus').textContent='GPS Error: '+err.message;$('startGps').disabled=false;$('stopGps').disabled=true;gpsWatch=null;toast('ตรวจสอบการอนุญาต Location ของเบราว์เซอร์')},{enableHighAccuracy:true,maximumAge:3000,timeout:20000})}
 function stopGPS(){if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;$('startGps').disabled=false;$('stopGps').disabled=true;$('gpsStatus').textContent='หยุดส่งตำแหน่งแล้ว'}
 
