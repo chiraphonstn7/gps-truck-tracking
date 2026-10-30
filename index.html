@@ -129,6 +129,9 @@ ${profile?.role==='admin'?'<th>จัดการ</th>':''}
   `:'<div class="empty">ไม่พบพัสดุ</div>';
 
   $('shipmentResults').querySelectorAll('[data-update-shipment]').forEach(btn=>{
+  $('shipmentResults').querySelectorAll('[data-edit-shipment]').forEach(btn=>{
+  btn.onclick=()=>editShipment(btn.dataset.editShipment);
+});  
     btn.onclick=()=>updateShipmentStatus(btn.dataset.updateShipment);
   });
 }
