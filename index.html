@@ -170,8 +170,8 @@ function renderShipments(rows=shipments){
           <th>ผู้รับ</th>
           <th>สถานะ</th>
           <th>รถ</th>
-          ${canUpdate?'<th>เปลี่ยนสถานะ</th>':''}
-${profile?.role==='admin'?'<th>จัดการ</th>':''}
+          ${profile?.role==='admin'?'<th>จัดการ</th>':''}
+${canUpdate?'<th>เปลี่ยนสถานะ</th>':''}
         </tr>
       </thead>
       <tbody>
