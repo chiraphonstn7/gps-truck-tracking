@@ -51,7 +51,43 @@ function renderShipments(rows=shipments){$('shipmentResults').innerHTML=rows.len
 function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 async function startGPS(){const vid=$('driverVehicle').value;if(!vid){toast('เลือกรถก่อนเริ่มส่ง GPS');return}if(!navigator.geolocation){toast('เบราว์เซอร์นี้ไม่รองรับ GPS');return}if(!window.isSecureContext){toast('ต้องเปิดเว็บไซต์ผ่าน HTTPS จึงใช้ GPS ได้');return}const v=vehicles.find(x=>String(x.id)===String(vid));if(!v){toast('ไม่พบรถ');return}if(v.driver_id&&v.driver_id!==user.id&&profile.role!=='admin'){toast('รถคันนี้ถูกกำหนดให้คนขับบัญชีอื่น');return}$('startGps').disabled=true;$('stopGps').disabled=false;$('gpsStatus').textContent='กำลังขอสิทธิ์ตำแหน่งจากโทรศัพท์...';gpsWatch=navigator.geolocation.watchPosition(async pos=>{const c=pos.coords;try{const{error}=await sb.rpc('update_vehicle_location',{p_vehicle_id:vid,p_lat:c.latitude,p_lng:c.longitude});if(error)throw error;$('gpsStatus').textContent=`ส่ง GPS สำเร็จ · ${c.latitude.toFixed(6)}, ${c.longitude.toFixed(6)} · ความแม่นยำ ±${Math.round(c.accuracy)} เมตร`;await loadData(false)}catch(e){$('gpsStatus').textContent='ส่งพิกัดไม่สำเร็จ: '+e.message;console.error(e)}},err=>{$('gpsStatus').textContent='GPS Error: '+err.message;$('startGps').disabled=false;$('stopGps').disabled=true;gpsWatch=null;toast('ตรวจสอบการอนุญาต Location ของเบราว์เซอร์')},{enableHighAccuracy:true,maximumAge:3000,timeout:20000})}
 function stopGPS(){if(gpsWatch!==null)navigator.geolocation.clearWatch(gpsWatch);gpsWatch=null;$('startGps').disabled=false;$('stopGps').disabled=true;$('gpsStatus').textContent='หยุดส่งตำแหน่งแล้ว'}
-async function addVehicle(){if(profile?.role!=='admin'){toast('ต้องเป็นผู้ดูแลระบบ');return}const code=$('vehicleCode').value.trim(),name=$('vehicleName').value.trim(),driver=$('driverId').value.trim()||null;if(!code){toast('กรอกรหัสรถก่อน');return}try{const{error}=await sb.from('vehicles').insert({vehicle_code:code,vehicle_name:name||code,driver_id:driver});if(error)throw error;toast('เพิ่มรถสำเร็จ');$('vehicleCode').value='';$('vehicleName').value='';$('driverId').value='';await loadData()}catch(e){toast('บันทึกรถไม่สำเร็จ: '+e.message)}}
+
+async function addVehicle(){
+  if(profile?.role!=='admin'){
+    toast('ต้องเป็นผู้ดูแลระบบ');
+    return;
+  }
+
+  const code=$('vehicleCode').value.trim();
+  const name=$('vehicleName').value.trim();
+  const driver=$('driverId').value.trim()||null;
+
+  if(!code){
+    toast('กรอกรหัสรถก่อน');
+    return;
+  }
+
+  try{
+    const{error}=await sb.from('vehicles').insert({
+      plate_number:code,
+      vehicle_name:name||code,
+      driver_id:driver
+    });
+
+    if(error) throw error;
+
+    toast('เพิ่มรถสำเร็จ');
+    $('vehicleCode').value='';
+    $('vehicleName').value='';
+    $('driverId').value='';
+
+    await loadData();
+  }catch(e){
+    console.error(e);
+    toast('บันทึกรถไม่สำเร็จ: '+e.message);
+  }
+}
+
 async function addShipment(){if(profile?.role!=='admin'){toast('ต้องเป็นผู้ดูแลระบบ');return}const code=$('trackingCode').value.trim(),recipient=$('recipientName').value.trim(),status=$('shipmentStatus').value,vehicle=$('shipmentVehicle').value||null;if(!code){toast('กรอกเลขพัสดุก่อน');return}try{const{error}=await sb.from('shipments').insert({tracking_number:code,recipient_name:recipient,status,vehicle_id:vehicle});if(error)throw error;toast('เพิ่มพัสดุสำเร็จ');$('trackingCode').value='';$('recipientName').value='';await loadData()}catch(e){toast('บันทึกพัสดุไม่สำเร็จ: '+e.message)}}
 $('loginBtn').onclick=()=>authAction('login');$('signupBtn').onclick=()=>authAction('signup');$('password').addEventListener('keydown',e=>{if(e.key==='Enter')authAction('login')});$('logoutBtn').onclick=async()=>{stopGPS();if(refreshTimer)clearInterval(refreshTimer);try{if(sb)await sb.auth.signOut()}catch(e){console.warn(e)}user=null;profile=null;vehicles=[];shipments=[];$('logoutBtn').classList.add('hidden');$('userLabel').textContent='';showOnly('authScreen')};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>switchTab(b.dataset.tab));$('refreshBtn').onclick=()=>loadData();$('startGps').onclick=startGPS;$('stopGps').onclick=stopGPS;$('addVehicle').onclick=addVehicle;$('addShipment').onclick=addShipment;$('searchShipment').onclick=()=>{const q=$('trackingSearch').value.trim().toLowerCase();if(!q){renderShipments();toast('กรุณากรอกเลขพัสดุ');return}const rows=shipments.filter(s=>String(s.tracking_number||'').trim().toLowerCase().includes(q));renderShipments(rows);if(!rows.length)toast('ไม่พบพัสดุเลขนี้')};$('trackingSearch').addEventListener('keydown',e=>{if(e.key==='Enter')$('searchShipment').click()});$('showAllShipments').onclick=()=>{$('trackingSearch').value='';renderShipments(shipments)};window.addEventListener('unhandledrejection',e=>{console.error(e.reason);toast('เกิดข้อผิดพลาด: '+(e.reason?.message||e.reason||'ไม่ทราบสาเหตุ'))});
 // เริ่มต้นระบบทันที: ผู้ใช้ทุกคนที่เปิดลิงก์เดียวกันจะใช้ค่าตั้งค่า Supabase จากไฟล์นี้
