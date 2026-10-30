@@ -54,7 +54,7 @@ async function loadData(showErr=true){
     const[vr,sr]=await Promise.all([
       vehicleQuery.order('created_at',{ascending:false}),
       sb.from('shipments')
-        .select('id,tracking_number,recipient_name,status,vehicle_id,created_at')
+        .select('id,tracking_number,recipient_name,destination,status,vehicle_id,created_at')
         .order('created_at',{ascending:false})
     ]);
 
