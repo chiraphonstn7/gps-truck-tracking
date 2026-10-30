@@ -256,6 +256,7 @@ async function updateShipmentStatus(id){
   }
 }
       
+
 async function editShipment(id){
   if(profile?.role!=='admin'){
     toast('ต้องเป็นผู้ดูแลระบบ');
@@ -277,48 +278,66 @@ async function editShipment(id){
   const destination=prompt('แก้ไขที่อยู่ปลายทาง:',s.destination||'');
   if(destination===null)return;
 
-  // เลือกรถจากทะเบียนและชื่อรถ ไม่ต้องกรอก UUID
-  const vehicleOptions=[
-    {id:'',label:'ไม่ระบุรถ'},
-    ...vehicles.map(v=>({
-      id:String(v.id),
-      label:vCode(v)+' — '+vName(v)
-    }))
-  ];
-
-  const currentIndex=vehicleOptions.findIndex(
-    v=>v.id===String(s.vehicle_id||'')
-  );
-
-  const vehicleList=vehicleOptions
-    .map((v,i)=>`${i+1}. ${v.label}`)
-    .join('\n');
-
-  const selected=prompt(
-    'เลือกรถที่รับผิดชอบ โดยพิมพ์หมายเลข:\n'+vehicleList,
-    String(currentIndex>=0?currentIndex+1:1)
-  );
-
-  if(selected===null)return;
-
-  const selectedIndex=Number(selected)-1;
-
-  if(
-    !Number.isInteger(Number(selected))||
-    selected.trim()===''||
-    selectedIndex<0||
-    selectedIndex>=vehicleOptions.length
-  ){
-    toast('หมายเลขรถไม่ถูกต้อง');
-    return;
-  }
-
-  const vehicleId=vehicleOptions[selectedIndex].id||null;
-
   if(!tracking.trim()){
     toast('เลขพัสดุห้ามว่าง');
     return;
   }
+
+  // สร้างหน้าต่างเลือกรถแบบ Dropdown
+  const overlay=document.createElement('div');
+  overlay.style.cssText=
+    'position:fixed;inset:0;background:#0008;z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+  const box=document.createElement('div');
+  box.style.cssText=
+    'background:white;width:100%;max-width:400px;padding:22px;border-radius:16px;';
+
+  const title=document.createElement('h3');
+  title.textContent='เลือกรถที่รับผิดชอบ';
+  title.style.marginTop='0';
+
+  const select=document.createElement('select');
+  select.style.cssText=
+    'width:100%;padding:13px;border:1px solid #cbd5e1;border-radius:10px;margin:12px 0 20px;font:inherit;';
+
+  const emptyOption=document.createElement('option');
+  emptyOption.value='';
+  emptyOption.textContent='ไม่ระบุรถ';
+  select.appendChild(emptyOption);
+
+  vehicles.forEach(v=>{
+    const option=document.createElement('option');
+    option.value=String(v.id);
+    option.textContent=vCode(v)+' — '+vName(v);
+    select.appendChild(option);
+  });
+
+  select.value=String(s.vehicle_id||'');
+
+  const buttons=document.createElement('div');
+  buttons.style.cssText='display:flex;gap:10px;';
+
+  const cancel=document.createElement('button');
+  cancel.textContent='ยกเลิก';
+  cancel.className='secondary';
+  cancel.style.flex='1';
+
+  const confirm=document.createElement('button');
+  confirm.textContent='ยืนยัน';
+  confirm.className='primary';
+  confirm.style.flex='1';
+
+  buttons.append(cancel,confirm);
+  box.append(title,select,buttons);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const vehicleId=await new Promise(resolve=>{
+    cancel.onclick=()=>{overlay.remove();resolve(null)};
+    confirm.onclick=()=>{const value=select.value;overlay.remove();resolve(value)};
+  });
+
+  if(vehicleId===null)return;
 
   try{
     const{data,error}=await sb.from('shipments')
@@ -326,7 +345,7 @@ async function editShipment(id){
         tracking_number:tracking.trim(),
         recipient_name:recipient.trim(),
         destination:destination.trim(),
-        vehicle_id:vehicleId
+        vehicle_id:vehicleId||null
       })
       .eq('id',id)
       .select('id');
