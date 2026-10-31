@@ -303,7 +303,10 @@ function renderDriverShipmentSummary(){
   const list=$('driverShipmentSummary');
   const filter=$('summaryDriverFilter');
   const select=$('summaryDriverSelect');
-
+if(!card || !list || !filter || !select){
+  console.error('ไม่พบ HTML element ของสรุปพัสดุ');
+  return;
+}
   const statuses=[
     'รับพัสดุแล้ว',
     'กำลังขนส่ง',
