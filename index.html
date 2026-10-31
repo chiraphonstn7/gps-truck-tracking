@@ -66,7 +66,19 @@
     <small>มีปัญหา</small>
     <strong id="statProblem" style="color:#dc2626">0</strong>
   </div>
-</div><div class="grid"><div class="card"><div class="row" style="justify-content:space-between"><h2>ตำแหน่งรถบนแผนที่</h2><button id="refreshBtn" class="secondary" style="flex:0">รีเฟรช</button></div><div id="map"></div><p class="muted small">ตำแหน่งอัปเดตทุก 10 วินาทีเมื่อมีพิกัดใหม่</p></div><div class="card"><h2>รายการรถ</h2><div id="vehicleList" class="list"><div class="empty">กำลังโหลด...</div></div></div></div></section>
+</div>
+
+<div class="card" id="gpsAlertCard" style="margin-bottom:16px">
+  <h2>🔔 แจ้งเตือนรถออฟไลน์</h2>
+  <p class="small muted">
+    รถที่ไม่ได้ส่ง GPS เกิน 15 นาที
+  </p>
+  <div id="gpsAlertList" class="list">
+    <div class="empty">กำลังตรวจสอบสถานะ GPS...</div>
+  </div>
+</div>
+
+<div class="grid"><div class="card"><div class="row" style="justify-content:space-between"><h2>ตำแหน่งรถบนแผนที่</h2><button id="refreshBtn" class="secondary" style="flex:0">รีเฟรช</button></div><div id="map"></div><p class="muted small">ตำแหน่งอัปเดตทุก 10 วินาทีเมื่อมีพิกัดใหม่</p></div><div class="card"><h2>รายการรถ</h2><div id="vehicleList" class="list"><div class="empty">กำลังโหลด...</div></div></div></div></section>
 <section id="driverPanel" class="hidden"><div class="card"><h2>📡 แชร์ตำแหน่ง GPS ของโทรศัพท์คนขับ</h2><p class="muted">เปิดหน้านี้บนโทรศัพท์ อนุญาต Location และเปิดหน้าเว็บค้างไว้ระหว่างเดินทาง ต้องใช้ HTTPS</p><div class="field"><label>เลือกรถที่ได้รับมอบหมาย</label><select id="driverVehicle"><option value="">กำลังโหลดรถ...</option></select></div><div class="row"><button id="startGps" class="primary">เริ่มส่งตำแหน่ง GPS</button><button id="stopGps" class="danger" disabled>หยุดส่ง GPS</button></div><div id="gpsStatus" class="notice">ยังไม่ได้เริ่มส่งตำแหน่ง</div><p class="small muted">มือถือบางรุ่นอาจหยุดส่ง GPS เมื่อปิดหน้าจอ</p></div></section>
 <section id="shipmentsPanel" class="hidden"><div class="card"><h2>📦 ค้นหาพัสดุ</h2><div class="row"><div class="field" style="flex:3"><label>เลขพัสดุ</label><input id="trackingSearch" placeholder="เช่น TH-10001"></div><button id="searchShipment" class="primary" style="align-self:end">ค้นหา</button><button id="showAllShipments" class="secondary" style="align-self:end">แสดงทั้งหมด</button></div><div id="shipmentResults" class="tablewrap"><div class="empty">ใส่เลขพัสดุแล้วกดค้นหา</div></div></div></section>
 <section id="managePanel" class="hidden"><div class="grid"><div class="card"><h2>➕ เพิ่มรถขนส่ง</h2><div class="field"><label>ทะเบียน/รหัสรถ</label><input id="vehicleCode" placeholder="เช่น TRUCK-01"></div><div class="field"><label>ชื่อรถ</label><input id="vehicleName" placeholder="รถขนส่งคันที่ 1"></div><div class="field"><label>รหัสผู้ใช้คนขับ (User ID) — ไม่บังคับ</label><input id="driverId" placeholder="UUID ของบัญชีคนขับ"></div><button id="addVehicle" class="primary">บันทึกรถ</button><hr><h2>➕ เพิ่มพัสดุ</h2><div class="field"><label>เลขพัสดุ</label><input id="trackingCode" placeholder="TH-10001"></div><div class="field"><label>ชื่อผู้รับ</label><input id="recipientName" placeholder="ชื่อผู้รับพัสดุ"></div><div class="field"><label>ที่อยู่ปลายทาง</label><input id="shipmentDestination" placeholder="กรอกที่อยู่ปลายทาง"></div><div class="field"><label>สถานะ</label><select id="shipmentStatus"><option value="รับพัสดุแล้ว">รับพัสดุแล้ว</option><option value="กำลังขนส่ง">กำลังขนส่ง</option><option value="จัดส่งสำเร็จ">จัดส่งสำเร็จ</option><option value="มีปัญหา">มีปัญหา</option></select></div><div class="field"><label>รถที่รับผิดชอบ</label><select id="shipmentVehicle"><option value="">ไม่ระบุรถ</option></select></div><button id="addShipment" class="primary">บันทึกพัสดุ</button><div class="notice">หน้านี้ใช้ได้เฉพาะบัญชีผู้ดูแลระบบ</div></div><div class="card"><h2>รายการรถและสถานะ</h2><div id="manageVehicleList" class="list"></div></div></div></section></main>
