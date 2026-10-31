@@ -242,7 +242,7 @@ function renderStats(){
       String(d.id)===String(v.driver_id)
     );
 
-    const lastSeen=new Date(v.last_seen);
+    const lastSeen=new Date(getGpsTimestamp(v));
     const minutes=Math.floor(
       (Date.now()-lastSeen.getTime())/60000
     );
