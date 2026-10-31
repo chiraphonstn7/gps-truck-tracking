@@ -155,6 +155,37 @@ renderVehicles();
 
 function vCode(v){return v.plate_number||v.code||v.id||''}function vName(v){return v.vehicle_name||v.name||vCode(v)}
 function hasCoords(v){return v.latitude!=null&&v.longitude!=null&&Number.isFinite(Number(v.latitude))&&Number.isFinite(Number(v.longitude))}
+      function getGpsStatus(v){
+  if(!v.last_seen){
+    return {
+      text:'ยังไม่เคยส่ง GPS',
+      color:'gray'
+    };
+  }
+
+  const minutes=(Date.now()-new Date(v.last_seen).getTime())/60000;
+
+  if(minutes<=1){
+    return {text:'ออนไลน์',color:'green'};
+  }
+
+  if(minutes<=5){
+    return {text:'รอสัญญาณ',color:'blue'};
+  }
+
+  if(minutes<=15){
+    return {text:'สัญญาณขาด',color:'gray'};
+  }
+
+  return {text:'ออฟไลน์',color:'red'};
+}
+
+function getLastSeenText(v){
+  if(!v.last_seen)return 'ยังไม่มีข้อมูลตำแหน่ง';
+
+  return 'ตำแหน่งล่าสุด: '+
+    new Date(v.last_seen).toLocaleString('th-TH');
+}
 function renderStats(){
   $('statVehicles').textContent = vehicles.length;
 
