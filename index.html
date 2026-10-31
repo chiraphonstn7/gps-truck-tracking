@@ -323,7 +323,16 @@ const statusClass = s => {
   return 'gray';
 };
 function toast(msg){$('toast').textContent=msg;$('toast').classList.remove('hidden');clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').classList.add('hidden'),4500)}
-function showOnly(id){['authScreen','appScreen'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
+function showOnly(id){
+  [
+    'authScreen',
+    'appScreen',
+    'forgotPasswordScreen',
+    'resetPasswordScreen'
+  ].forEach(x=>{
+    $(x).classList.toggle('hidden',x!==id);
+  });
+}
 function setup(){
   if(!SUPABASE_URL.startsWith('https://') || SUPABASE_URL.includes('ใส่_') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('ใส่_')){
     showOnly('authScreen');
