@@ -252,6 +252,125 @@ function getLastSeenText(v){
 
   return 'ตำแหน่งล่าสุด: '+
     new Date(timestamp).toLocaleString('th-TH');
+}function renderDriverShipmentSummary(){
+
+  const card=$('driverShipmentSummaryCard');
+  const list=$('driverShipmentSummary');
+
+  const statuses=[
+    'รับพัสดุแล้ว',
+    'กำลังขนส่ง',
+    'จัดส่งสำเร็จ',
+    'มีปัญหา'
+  ];
+
+  // นับจำนวนตามสถานะ
+  function countStatuses(rows){
+    return statuses.map(status=>({
+      status,
+      count:rows.filter(s=>s.status===status).length
+    }));
+  }
+
+  // Driver เห็นเฉพาะของตัวเอง
+  if(profile?.role==='driver'){
+
+    card.classList.remove('hidden');
+
+    const counts=countStatuses(shipments);
+    const total=shipments.length;
+
+    list.innerHTML=`
+      <div class="item">
+        <div>
+          <b>📦 พัสดุของฉันทั้งหมด</b>
+        </div>
+        <strong>${total} รายการ</strong>
+      </div>
+
+      ${counts.map(x=>`
+        <div class="item">
+          <span>
+            <span class="badge ${statusClass(x.status)}">
+              ${esc(x.status)}
+            </span>
+          </span>
+          <b>${x.count} รายการ</b>
+        </div>
+      `).join('')}
+    `;
+
+    return;
+  }
+
+  // Admin เห็นข้อมูลแยกตามคนขับ
+  if(profile?.role==='admin'){
+
+    card.classList.remove('hidden');
+
+    const driverHtml=drivers.map(d=>{
+
+      const driverVehicles=vehicles.filter(v=>
+        String(v.driver_id)===String(d.id)
+      );
+
+      const vehicleIds=driverVehicles.map(v=>String(v.id));
+
+      const rows=shipments.filter(s=>
+        vehicleIds.includes(String(s.vehicle_id))
+      );
+
+      const counts=countStatuses(rows);
+
+      return `
+        <div class="item" style="display:block">
+          <b>👤 ${esc(d.email||d.id)}</b>
+
+          <div class="small muted" style="margin:6px 0">
+            พัสดุทั้งหมด ${rows.length} รายการ
+          </div>
+
+          <div class="row">
+            ${counts.map(x=>`
+              <div class="stat" style="flex:1;min-width:120px">
+                <small>${esc(x.status)}</small>
+                <strong style="font-size:21px">
+                  ${x.count}
+                </strong>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // พัสดุที่ยังไม่ได้กำหนดคนขับ
+    const unassigned=shipments.filter(s=>{
+      const v=vehicles.find(x=>
+        String(x.id)===String(s.vehicle_id)
+      );
+
+      return !v || !v.driver_id;
+    });
+
+    const unassignedHtml=unassigned.length?`
+      <div class="item" style="display:block">
+        <b>⚠️ ยังไม่กำหนดคนขับ</b>
+        <div class="small muted">
+          ${unassigned.length} รายการ
+        </div>
+      </div>
+    `:'';
+
+    list.innerHTML=
+      driverHtml+
+      unassignedHtml||
+      '<div class="empty">ยังไม่มีข้อมูลคนขับ</div>';
+
+    return;
+  }
+
+  card.classList.add('hidden');
 }
 function renderStats(){
   $('statVehicles').textContent = vehicles.length;
