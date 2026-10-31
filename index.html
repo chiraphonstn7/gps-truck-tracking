@@ -203,41 +203,48 @@ function renderStats(){
   $('statProblem').textContent =
     shipments.filter(s => s.status === 'มีปัญหา').length;
 }
+
 function renderVehicles(){
-  const html=vehicles.map(v=>`
-    <div class="item">
-      <div>
-        <b>🚚 ${esc(vName(v))}</b>
-        <div class="small muted">
-          ${esc(vCode(v))} · ${hasCoords(v)?'มีพิกัด':'ยังไม่มีพิกัด'}
-        </div>
-        ${v.last_seen?`
-          <div class="small muted">
-            อัปเดต: ${new Date(v.last_seen).toLocaleString('th-TH')}
-          </div>
-        `:''}
-      </div>
-      <span class="badge ${hasCoords(v)?'green':'gray'}">
-        ${hasCoords(v)?'ออนไลน์/มีพิกัด':'ออฟไลน์'}
-      </span>
-    </div>
-  `).join('')||'<div class="empty">ยังไม่มีรถในระบบ</div>';
+  const vehicleHtml = v => {
+    const gps = getGpsStatus(v);
 
-  // รายการรถหน้าแผนที่
-  $('vehicleList').innerHTML=html;
-
-  // รายการรถหน้าจัดการ พร้อมปุ่มแก้ไข
-  $('manageVehicleList').innerHTML=vehicles.length
-    ?vehicles.map(v=>`
+    return `
       <div class="item">
         <div>
           <b>🚚 ${esc(vName(v))}</b>
           <div class="small muted">${esc(vCode(v))}</div>
           <div class="small muted">
-            ${hasCoords(v)?'มีพิกัด GPS':'ยังไม่มีพิกัด GPS'}
+            ${esc(getLastSeenText(v))}
           </div>
-          <span class="badge ${hasCoords(v)?'green':'gray'}">
-            ${hasCoords(v)?'ออนไลน์':'ออฟไลน์'}
+          <div class="small muted">
+            ${hasCoords(v) ? 'มีพิกัด GPS' : 'ยังไม่มีพิกัด GPS'}
+          </div>
+        </div>
+        <span class="badge ${gps.color}">
+          ${gps.text}
+        </span>
+      </div>
+    `;
+  };
+
+  // รายการรถหน้าแผนที่
+  $('vehicleList').innerHTML =
+    vehicles.map(vehicleHtml).join('') ||
+    '<div class="empty">ยังไม่มีรถในระบบ</div>';
+
+  // รายการรถหน้าจัดการ พร้อมปุ่มแก้ไข
+  $('manageVehicleList').innerHTML = vehicles.length
+    ? vehicles.map(v => `
+      <div class="item">
+        <div>
+          <b>🚚 ${esc(vName(v))}</b>
+          <div class="small muted">${esc(vCode(v))}</div>
+          <div class="small muted">${esc(getLastSeenText(v))}</div>
+          <div class="small muted">
+            ${hasCoords(v) ? 'มีพิกัด GPS' : 'ยังไม่มีพิกัด GPS'}
+          </div>
+          <span class="badge ${getGpsStatus(v).color}">
+            ${getGpsStatus(v).text}
           </span>
         </div>
         <button class="secondary"
@@ -246,15 +253,16 @@ function renderVehicles(){
         </button>
       </div>
     `).join('')
-    :'<div class="empty">ยังไม่มีรถในระบบ</div>';
+    : '<div class="empty">ยังไม่มีรถในระบบ</div>';
 
   // กดปุ่มแก้ไขรถ
   $('manageVehicleList')
     .querySelectorAll('[data-edit-vehicle]')
-    .forEach(btn=>{
-      btn.onclick=()=>editVehicle(btn.dataset.editVehicle);
+    .forEach(btn => {
+      btn.onclick = () => editVehicle(btn.dataset.editVehicle);
     });
 }
+
 function renderMap(){if(!map)return;const valid=vehicles.filter(hasCoords);valid.forEach(v=>{const key=String(v.id),lat=Number(v.latitude),lng=Number(v.longitude),content=`<b>🚚 ${esc(vName(v))}</b><br>รหัส: ${esc(vCode(v))}<br>พิกัด: ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>อัปเดต: ${v.last_seen?new Date(v.last_seen).toLocaleString('th-TH'):'-'}`;if(markers[key])markers[key].setLatLng([lat,lng]).setPopupContent(content);else markers[key]=L.marker([lat,lng]).addTo(map).bindPopup(content)});Object.keys(markers).forEach(k=>{if(!valid.some(v=>String(v.id)===k)){map.removeLayer(markers[k]);delete markers[k]}});if(valid.length===1)map.setView([Number(valid[0].latitude),Number(valid[0].longitude)],14);else if(valid.length>1){const group=L.featureGroup(valid.map(v=>markers[String(v.id)]).filter(Boolean));if(group.getLayers().length)map.fitBounds(group.getBounds().pad(.15),{maxZoom:13})}}
 function renderVehicleSelects(){const opts=vehicles.map(v=>`<option value="${esc(v.id)}">${esc(vCode(v))} — ${esc(vName(v))}</option>`).join('');$('driverVehicle').innerHTML='<option value="">เลือกรถ</option>'+opts;$('shipmentVehicle').innerHTML='<option value="">ไม่ระบุรถ</option>'+opts}
 function renderShipments(rows=shipments){
