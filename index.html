@@ -152,17 +152,46 @@ async function loadData(showErr=true){
       vehicleQuery=vehicleQuery.eq('driver_id',user.id);
     }
 
-    const[vr,sr]=await Promise.all([
-      vehicleQuery.order('created_at',{ascending:false}),
-      sb.from('shipments')
-        .select('id,tracking_number,recipient_name,destination,status,vehicle_id,created_at')
-        .order('created_at',{ascending:false})
-    ]);
+    // โหลดข้อมูลรถก่อน
+const vr=await vehicleQuery.order(
+  'created_at',
+  {ascending:false}
+);
 
-    if(vr.error)throw new Error('โหลดรถไม่สำเร็จ: '+vr.error.message);
-    if(sr.error)throw new Error('โหลดพัสดุไม่สำเร็จ: '+sr.error.message);
+if(vr.error){
+  throw new Error('โหลดรถไม่สำเร็จ: '+vr.error.message);
+}
 
-    vehicles=vr.data||[];
+vehicles=vr.data||[];
+
+// โหลดพัสดุ
+let sr;
+
+let shipmentQuery=sb.from('shipments')
+  .select('id,tracking_number,recipient_name,destination,status,vehicle_id,created_at');
+
+// Driver เห็นเฉพาะพัสดุของรถที่ได้รับมอบหมาย
+if(profile?.role!=='admin'){
+
+  const vehicleIds=vehicles.map(v=>v.id);
+
+  if(vehicleIds.length>0){
+    sr=await shipmentQuery
+      .in('vehicle_id',vehicleIds)
+      .order('created_at',{ascending:false});
+  }else{
+    sr={data:[],error:null};
+  }
+
+}else{
+  sr=await shipmentQuery
+    .order('created_at',{ascending:false});
+}
+
+if(sr.error){
+  throw new Error('โหลดพัสดุไม่สำเร็จ: '+sr.error.message);
+}
+
 shipments=sr.data||[];
 
 // โหลดรายชื่อบัญชีคนขับ เฉพาะ Admin
