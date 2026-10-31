@@ -341,7 +341,84 @@ function renderVehicles(){
     });
 }
 
-function renderMap(){if(!map)return;const valid=vehicles.filter(hasCoords);valid.forEach(v=>{const key=String(v.id),lat=Number(v.latitude),lng=Number(v.longitude),content=`<b>🚚 ${esc(vName(v))}</b><br>รหัส: ${esc(vCode(v))}<br>พิกัด: ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>อัปเดต: ${v.last_seen?new Date(v.last_seen).toLocaleString('th-TH'):'-'}`;if(markers[key])markers[key].setLatLng([lat,lng]).setPopupContent(content);else markers[key]=L.marker([lat,lng]).addTo(map).bindPopup(content)});Object.keys(markers).forEach(k=>{if(!valid.some(v=>String(v.id)===k)){map.removeLayer(markers[k]);delete markers[k]}});if(valid.length===1)map.setView([Number(valid[0].latitude),Number(valid[0].longitude)],14);else if(valid.length>1){const group=L.featureGroup(valid.map(v=>markers[String(v.id)]).filter(Boolean));if(group.getLayers().length)map.fitBounds(group.getBounds().pad(.15),{maxZoom:13})}}
+function renderMap(){
+  if(!map)return;
+
+  const valid=vehicles.filter(hasCoords);
+
+  valid.forEach(v=>{
+    const key=String(v.id);
+    const lat=Number(v.latitude);
+    const lng=Number(v.longitude);
+
+    const timestamp=getGpsTimestamp(v);
+
+    const content=`
+      <b>🚚 ${esc(vName(v))}</b><br>
+      รหัส: ${esc(vCode(v))}<br>
+      พิกัด: ${lat.toFixed(6)}, ${lng.toFixed(6)}<br>
+      อัปเดต: ${timestamp
+        ?new Date(timestamp).toLocaleString('th-TH')
+        :'-'}
+    `;
+
+    if(markers[key]){
+      markers[key]
+        .setLatLng([lat,lng])
+        .setPopupContent(content);
+    }else{
+      markers[key]=L.marker([lat,lng])
+        .addTo(map)
+        .bindPopup(content);
+    }
+  });
+
+  // ลบหมุดของรถที่ไม่มีพิกัดแล้ว
+  Object.keys(markers).forEach(k=>{
+    if(!valid.some(v=>String(v.id)===k)){
+      map.removeLayer(markers[k]);
+      delete markers[k];
+    }
+  });
+
+  // กรณีเลือกดูรถรายคัน
+  if(selectedMapVehicle!=='all'){
+    const selected=valid.find(v=>
+      String(v.id)===String(selectedMapVehicle)
+    );
+
+    if(selected){
+      const marker=markers[String(selected.id)];
+
+      map.setView([
+        Number(selected.latitude),
+        Number(selected.longitude)
+      ],16);
+
+      if(marker)marker.openPopup();
+    }
+
+    return;
+  }
+
+  // กรณีดูรถทั้งหมด
+  if(valid.length===1){
+    map.setView([
+      Number(valid[0].latitude),
+      Number(valid[0].longitude)
+    ],14);
+  }else if(valid.length>1){
+    const group=L.featureGroup(
+      valid.map(v=>markers[String(v.id)]).filter(Boolean)
+    );
+
+    if(group.getLayers().length){
+      map.fitBounds(group.getBounds().pad(.15),{
+        maxZoom:13
+      });
+    }
+  }
+}
 function renderVehicleSelects(){
   const opts=vehicles.map(v=>
     `<option value="${esc(v.id)}">${esc(vCode(v))} — ${esc(vName(v))}</option>`
