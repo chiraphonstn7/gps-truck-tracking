@@ -100,7 +100,24 @@
 </style>
 </head><body>
 <header class="top"><div class="brand">🚚 <span>GPS</span> TRUCK TRACKING</div><div class="row" style="flex:0;justify-content:flex-end"><span id="userLabel" class="small"></span><button id="logoutBtn" class="secondary hidden">ออกจากระบบ</button></div></header>
-<section id="authScreen" class="loginbox"><h1>เข้าสู่ระบบ</h1><p class="muted">ระบบติดตามรถและพัสดุ</p><div class="field"><label>อีเมล</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com"></div><div class="field"><label>รหัสผ่าน (อย่างน้อย 6 ตัว)</label><input id="password" type="password" autocomplete="current-password" placeholder="รหัสผ่าน"></div><div class="row"><button id="loginBtn" class="primary">เข้าสู่ระบบ</button><button id="signupBtn" class="secondary">สมัครสมาชิก</button></div><div class="notice">หากระบบขอให้ยืนยันอีเมล ให้ยืนยันก่อนเข้าสู่ระบบ บัญชีผู้ดูแลต้องมี role = admin ในตาราง profiles</div></section>
+<section id="authScreen" class="loginbox"><h1>เข้าสู่ระบบ</h1><p class="muted">ระบบติดตามรถและพัสดุ</p><div class="field"><label>อีเมล</label><input id="email" type="email" autocomplete="username" placeholder="you@example.com"></div><div class="field"><label>รหัสผ่าน (อย่างน้อย 6 ตัว)</label><input id="password" type="password" autocomplete="current-password" placeholder="รหัสผ่าน"></div>
+<div class="row">
+  <button id="loginBtn" class="primary">เข้าสู่ระบบ</button>
+  <button id="signupBtn" class="secondary">สมัครสมาชิก</button>
+</div>
+
+<div style="text-align:right;margin-top:12px">
+  <a href="#" id="forgotPasswordLink"
+     style="color:#2563eb;text-decoration:none;font-size:14px;font-weight:700">
+    ลืมรหัสผ่าน?
+  </a>
+</div>
+
+<div class="notice">
+  หากระบบขอให้ยืนยันอีเมล ให้ยืนยันก่อนเข้าสู่ระบบ
+  บัญชีผู้ดูแลต้องมี role = admin ในตาราง profiles
+</div>
+
 <main id="appScreen" class="wrap hidden"><div class="tabs"><button class="tab active" data-tab="dashboard">📍 แผนที่รถ</button><button class="tab" data-tab="driver">📡 ส่ง GPS จากมือถือ</button><button class="tab" data-tab="shipments">📦 พัสดุ</button><button class="tab hidden" data-tab="manage" id="manageTab">⚙️ จัดการรถ/พัสดุ</button></div>
 <section id="dashboardPanel"><div class="stats">
   <div class="stat">
