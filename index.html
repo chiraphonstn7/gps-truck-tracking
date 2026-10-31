@@ -112,13 +112,23 @@
 <section id="shipmentsPanel" class="hidden">
 
   <!-- สรุปจำนวนพัสดุ -->
-  <div class="card" id="driverShipmentSummaryCard"
-       style="margin-bottom:16px">
+<div class="card" id="driverShipmentSummaryCard"
+     style="margin-bottom:16px">
+
     <h2>📦 สรุปจำนวนพัสดุแยกตามคนขับ</h2>
+
+    <div class="field" id="summaryDriverFilter">
+      <label>เลือกคนขับที่ต้องการดู</label>
+      <select id="summaryDriverSelect">
+        <option value="all">ดูคนขับทุกคน</option>
+      </select>
+    </div>
+
     <div id="driverShipmentSummary" class="list">
       <div class="empty">กำลังคำนวณจำนวนพัสดุ...</div>
     </div>
-  </div>
+
+</div>
 
   <!-- ค้นหาพัสดุ -->
   <div class="card">
