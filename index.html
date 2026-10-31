@@ -286,10 +286,13 @@ function getLastSeenText(v){
 
   return 'ตำแหน่งล่าสุด: '+
     new Date(timestamp).toLocaleString('th-TH');
-}function renderDriverShipmentSummary(){
+}
+function renderDriverShipmentSummary(){
 
   const card=$('driverShipmentSummaryCard');
   const list=$('driverShipmentSummary');
+  const filter=$('summaryDriverFilter');
+  const select=$('summaryDriverSelect');
 
   const statuses=[
     'รับพัสดุแล้ว',
@@ -298,114 +301,154 @@ function getLastSeenText(v){
     'มีปัญหา'
   ];
 
-  // นับจำนวนตามสถานะ
-  function countStatuses(rows){
-    return statuses.map(status=>({
-      status,
-      count:rows.filter(s=>s.status===status).length
-    }));
-  }
+  // สร้างตัวเลือกคนขับสำหรับ Admin
+  if(profile?.role==='admin'){
 
-  // Driver เห็นเฉพาะของตัวเอง
-  if(profile?.role==='driver'){
+    filter.classList.remove('hidden');
 
-    card.classList.remove('hidden');
+    const previous=select.value;
 
-    const counts=countStatuses(shipments);
-    const total=shipments.length;
-
-    list.innerHTML=`
-      <div class="item">
-        <div>
-          <b>📦 พัสดุของฉันทั้งหมด</b>
-        </div>
-        <strong>${total} รายการ</strong>
-      </div>
-
-      ${counts.map(x=>`
-        <div class="item">
-          <span>
-            <span class="badge ${statusClass(x.status)}">
-              ${esc(x.status)}
-            </span>
-          </span>
-          <b>${x.count} รายการ</b>
-        </div>
+    select.innerHTML=`
+      <option value="all">ดูคนขับทุกคน</option>
+      <option value="unassigned">พัสดุที่ยังไม่กำหนดคนขับ</option>
+      ${drivers.map(d=>`
+        <option value="${esc(d.id)}">
+          ${esc(d.email||d.id)}
+        </option>
       `).join('')}
     `;
 
+    if([...select.options].some(o=>o.value===previous)){
+      select.value=previous;
+    }
+
+  }else if(profile?.role==='driver'){
+
+    filter.classList.add('hidden');
+
+  }else{
+
+    card.classList.add('hidden');
     return;
   }
 
-  // Admin เห็นข้อมูลแยกตามคนขับ
+  card.classList.remove('hidden');
+
+  let rows=[];
+
+  // Driver เห็นเฉพาะพัสดุของตัวเอง
+  if(profile?.role==='driver'){
+
+    rows=shipments;
+
+  }
+
+  // Admin เลือกดูตามคนขับ
   if(profile?.role==='admin'){
 
-    card.classList.remove('hidden');
+    const selected=select.value;
 
-    const driverHtml=drivers.map(d=>{
+    if(selected==='all'){
+
+      rows=shipments;
+
+    }else if(selected==='unassigned'){
+
+      rows=shipments.filter(s=>{
+        const v=vehicles.find(x=>
+          String(x.id)===String(s.vehicle_id)
+        );
+
+        return !v || !v.driver_id;
+      });
+
+    }else{
 
       const driverVehicles=vehicles.filter(v=>
-        String(v.driver_id)===String(d.id)
+        String(v.driver_id)===String(selected)
       );
 
-      const vehicleIds=driverVehicles.map(v=>String(v.id));
+      const vehicleIds=driverVehicles.map(v=>
+        String(v.id)
+      );
 
-      const rows=shipments.filter(s=>
+      rows=shipments.filter(s=>
         vehicleIds.includes(String(s.vehicle_id))
       );
 
-      const counts=countStatuses(rows);
+    }
 
-      return `
-        <div class="item" style="display:block">
-          <b>👤 ${esc(d.email||d.id)}</b>
-
-          <div class="small muted" style="margin:6px 0">
-            พัสดุทั้งหมด ${rows.length} รายการ
-          </div>
-
-          <div class="row">
-            ${counts.map(x=>`
-              <div class="stat" style="flex:1;min-width:120px">
-                <small>${esc(x.status)}</small>
-                <strong style="font-size:21px">
-                  ${x.count}
-                </strong>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // พัสดุที่ยังไม่ได้กำหนดคนขับ
-    const unassigned=shipments.filter(s=>{
-      const v=vehicles.find(x=>
-        String(x.id)===String(s.vehicle_id)
-      );
-
-      return !v || !v.driver_id;
-    });
-
-    const unassignedHtml=unassigned.length?`
-      <div class="item" style="display:block">
-        <b>⚠️ ยังไม่กำหนดคนขับ</b>
-        <div class="small muted">
-          ${unassigned.length} รายการ
-        </div>
-      </div>
-    `:'';
-
-    list.innerHTML=
-      driverHtml+
-      unassignedHtml||
-      '<div class="empty">ยังไม่มีข้อมูลคนขับ</div>';
-
-    return;
   }
 
-  card.classList.add('hidden');
+  // นับจำนวนพัสดุ
+  const total=rows.length;
+
+  const delivered=rows.filter(s=>
+    s.status==='จัดส่งสำเร็จ'
+  ).length;
+
+  // พัสดุที่ยังเหลือ = ทั้งหมด - จัดส่งสำเร็จ
+  const remaining=total-delivered;
+
+  const problem=rows.filter(s=>
+    s.status==='มีปัญหา'
+  ).length;
+
+  const counts=statuses.map(status=>({
+    status,
+    count:rows.filter(s=>s.status===status).length
+  }));
+
+  list.innerHTML=`
+
+    <div class="stats">
+
+      <div class="stat">
+        <small>📦 พัสดุทั้งหมด</small>
+        <strong>${total}</strong>
+      </div>
+
+      <div class="stat">
+        <small>🟠 พัสดุที่ยังเหลือ</small>
+        <strong style="color:#ea580c">${remaining}</strong>
+      </div>
+
+      <div class="stat">
+        <small>✅ จัดส่งสำเร็จ</small>
+        <strong style="color:#16a34a">${delivered}</strong>
+      </div>
+
+      <div class="stat">
+        <small>⚠️ พัสดุมีปัญหา</small>
+        <strong style="color:#dc2626">${problem}</strong>
+      </div>
+
+    </div>
+
+    <h3 style="font-size:15px;margin:12px 0">
+      รายละเอียดตามสถานะ
+    </h3>
+
+    ${counts.map(x=>`
+      <div class="item">
+        <span class="badge ${statusClass(x.status)}">
+          ${esc(x.status)}
+        </span>
+        <b>${x.count} รายการ</b>
+      </div>
+    `).join('')}
+
+    <div class="notice">
+      📌 พัสดุที่ยังเหลือ หมายถึงพัสดุทั้งหมดที่ยังไม่ได้จัดส่งสำเร็จ
+      รวมพัสดุที่รับแล้ว กำลังขนส่ง และมีปัญหา
+    </div>
+
+  `;
+
+  // เปลี่ยนคนขับแล้วคำนวณใหม่ทันที
+  select.onchange=renderDriverShipmentSummary;
 }
+
 function renderStats(){
   $('statVehicles').textContent = vehicles.length;
 
