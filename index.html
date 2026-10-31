@@ -214,6 +214,61 @@ function renderStats(){
 
   $('statProblem').textContent =
     shipments.filter(s => s.status === 'มีปัญหา').length;
+}function renderGpsAlerts(){
+  const card=$('gpsAlertCard');
+  const list=$('gpsAlertList');
+
+  // แสดงการแจ้งเตือนเฉพาะ Admin
+  if(profile?.role!=='admin'){
+    card.classList.add('hidden');
+    return;
+  }
+
+  card.classList.remove('hidden');
+
+  // เลือกรถที่ออฟไลน์เกิน 15 นาที
+  const offlineVehicles=vehicles.filter(v=>
+    getGpsStatus(v).text==='ออฟไลน์'
+  );
+
+  if(offlineVehicles.length===0){
+    list.innerHTML=`
+      <div class="empty">
+        ✅ ขณะนี้ไม่มีรถออฟไลน์เกิน 15 นาที
+      </div>`;
+    return;
+  }
+
+  list.innerHTML=offlineVehicles.map(v=>{
+    const driver=drivers.find(d=>
+      String(d.id)===String(v.driver_id)
+    );
+
+    const lastSeen=new Date(v.last_seen);
+    const minutes=Math.floor(
+      (Date.now()-lastSeen.getTime())/60000
+    );
+
+    return `
+      <div class="item">
+        <div>
+          <b>🚨 ${esc(vName(v))}</b>
+          <div class="small muted">
+            ทะเบียน: ${esc(vCode(v))}
+          </div>
+          <div class="small muted">
+            คนขับ: ${esc(driver?.email||'ยังไม่กำหนด')}
+          </div>
+          <div class="small muted">
+            ${esc(getLastSeenText(v))}
+          </div>
+          <div class="small" style="color:#dc2626;font-weight:700">
+            ขาดการส่ง GPS มาแล้ว ${minutes} นาที
+          </div>
+        </div>
+        <span class="badge red">ออฟไลน์</span>
+      </div>`;
+  }).join('');
 }
 
 function renderVehicles(){
