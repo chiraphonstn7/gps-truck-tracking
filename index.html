@@ -538,12 +538,17 @@ function renderStats(){
 
   $('statProblem').textContent =
     shipments.filter(s => s.status === 'มีปัญหา').length;
-}function renderGpsAlerts(){
-  const card=$('gpsAlertCard');
-  const list=$('gpsAlertList');
+}let gpsAlertsExpanded = false;
+
+function renderGpsAlerts(){
+
+  const card = $('gpsAlertCard');
+  const list = $('gpsAlertList');
+  const count = $('gpsAlertCount');
+  const toggle = $('gpsAlertToggle');
 
   // แสดงการแจ้งเตือนเฉพาะ Admin
-  if(profile?.role!=='admin'){
+  if(profile?.role !== 'admin'){
     card.classList.add('hidden');
     return;
   }
@@ -551,48 +556,84 @@ function renderStats(){
   card.classList.remove('hidden');
 
   // เลือกรถที่ออฟไลน์เกิน 15 นาที
-  const offlineVehicles=vehicles.filter(v=>
-    getGpsStatus(v).text==='ออฟไลน์'
-  );
+  const offlineVehicles = vehicles
+    .filter(v => getGpsStatus(v).text === 'ออฟไลน์')
+    .sort((a,b) => {
+      const timeA = new Date(getGpsTimestamp(a)).getTime();
+      const timeB = new Date(getGpsTimestamp(b)).getTime();
+      return timeA - timeB;
+    });
 
-  if(offlineVehicles.length===0){
-    list.innerHTML=`
+  count.textContent = `${offlineVehicles.length} คัน`;
+
+  // ไม่มีรถออฟไลน์
+  if(offlineVehicles.length === 0){
+
+    list.innerHTML = `
       <div class="empty">
         ✅ ขณะนี้ไม่มีรถออฟไลน์เกิน 15 นาที
-      </div>`;
-    return;
+      </div>
+    `;
+
+  }else{
+
+    list.innerHTML = offlineVehicles.map(v => {
+
+      const driver = drivers.find(d =>
+        String(d.id) === String(v.driver_id)
+      );
+
+      const lastSeen = new Date(getGpsTimestamp(v));
+
+      const minutes = Math.max(0, Math.floor(
+        (Date.now() - lastSeen.getTime()) / 60000
+      ));
+
+      return `
+        <div class="gps-alert-item">
+
+          <div class="gps-alert-info">
+
+            <b>🚚 ${esc(vName(v))}</b>
+
+            <div class="small muted">
+              ทะเบียน: ${esc(vCode(v))}
+            </div>
+
+            <div class="small muted">
+              คนขับ: ${esc(driver?.email || 'ยังไม่กำหนด')}
+            </div>
+
+            <div class="small muted">
+              ${esc(getLastSeenText(v))}
+            </div>
+
+            <div class="small"
+                 style="color:#dc2626;font-weight:700;margin-top:3px">
+              ขาดการส่ง GPS ${minutes} นาที
+            </div>
+
+          </div>
+
+          <span class="badge red">ออฟไลน์</span>
+
+        </div>
+      `;
+
+    }).join('');
+
   }
 
-  list.innerHTML=offlineVehicles.map(v=>{
-    const driver=drivers.find(d=>
-      String(d.id)===String(v.driver_id)
-    );
+  // คงสถานะการเปิด/ปิดไว้เมื่อรีเฟรชข้อมูล
+  list.classList.toggle(
+    'gps-alert-hidden',
+    !gpsAlertsExpanded
+  );
 
-    const lastSeen=new Date(getGpsTimestamp(v));
-    const minutes=Math.floor(
-      (Date.now()-lastSeen.getTime())/60000
-    );
+  toggle.textContent = gpsAlertsExpanded
+    ? 'ซ่อนรายการ'
+    : 'ดูรายการ';
 
-    return `
-      <div class="item">
-        <div>
-          <b>🚨 ${esc(vName(v))}</b>
-          <div class="small muted">
-            ทะเบียน: ${esc(vCode(v))}
-          </div>
-          <div class="small muted">
-            คนขับ: ${esc(driver?.email||'ยังไม่กำหนด')}
-          </div>
-          <div class="small muted">
-            ${esc(getLastSeenText(v))}
-          </div>
-          <div class="small" style="color:#dc2626;font-weight:700">
-            ขาดการส่ง GPS มาแล้ว ${minutes} นาที
-          </div>
-        </div>
-        <span class="badge red">ออฟไลน์</span>
-      </div>`;
-  }).join('');
 }
 
 function renderVehicles(){
