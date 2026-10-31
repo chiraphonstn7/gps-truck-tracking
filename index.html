@@ -118,6 +118,58 @@
   บัญชีผู้ดูแลต้องมี role = admin ในตาราง profiles
 </div>
 
+</section>
+
+<!-- หน้าลืมรหัสผ่าน -->
+<section id="forgotPasswordScreen" class="loginbox hidden">
+  <h1>ลืมรหัสผ่าน</h1>
+  <p class="muted">
+    กรอกอีเมลที่ใช้สมัครสมาชิก เพื่อรับลิงก์ตั้งรหัสผ่านใหม่
+  </p>
+
+  <div class="field">
+    <label>อีเมล</label>
+    <input id="resetEmail" type="email"
+      placeholder="กรอกอีเมลของคุณ">
+  </div>
+
+  <button id="sendResetBtn" class="primary" style="width:100%">
+    ส่งลิงก์รีเซ็ตรหัสผ่าน
+  </button>
+
+  <p style="text-align:center;margin-top:18px">
+    <a href="#" id="backToLogin"
+       style="color:#2563eb;text-decoration:none">
+      ← กลับไปหน้าเข้าสู่ระบบ
+    </a>
+  </p>
+</section>
+
+<!-- หน้าตั้งรหัสผ่านใหม่ -->
+<section id="resetPasswordScreen" class="loginbox hidden">
+  <h1>ตั้งรหัสผ่านใหม่</h1>
+  <p class="muted">กรอกรหัสผ่านใหม่ที่ต้องการใช้งาน</p>
+
+  <div class="field">
+    <label>รหัสผ่านใหม่</label>
+    <input id="resetNewPassword" type="password"
+      placeholder="อย่างน้อย 8 ตัวอักษร">
+  </div>
+
+  <div class="field">
+    <label>ยืนยันรหัสผ่านใหม่</label>
+    <input id="resetConfirmPassword" type="password"
+      placeholder="กรอกรหัสผ่านใหม่อีกครั้ง">
+  </div>
+
+  <button id="saveNewPasswordBtn" class="primary"
+    style="width:100%">
+    บันทึกรหัสผ่านใหม่
+  </button>
+</section>
+
+<main id="appScreen" class="wrap hidden">
+
 <main id="appScreen" class="wrap hidden"><div class="tabs"><button class="tab active" data-tab="dashboard">📍 แผนที่รถ</button><button class="tab" data-tab="driver">📡 ส่ง GPS จากมือถือ</button><button class="tab" data-tab="shipments">📦 พัสดุ</button><button class="tab hidden" data-tab="manage" id="manageTab">⚙️ จัดการรถ/พัสดุ</button></div>
 <section id="dashboardPanel"><div class="stats">
   <div class="stat">
