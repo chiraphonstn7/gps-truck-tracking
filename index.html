@@ -332,27 +332,26 @@ function showOnly(id){
   });
 }
 
-try {
-  sb = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_ANON_KEY
-  );
+function setup(){
+  try {
+    sb = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
+    );
 
-  // ตรวจจับเมื่อผู้ใช้กลับมาจากลิงก์รีเซ็ตรหัสผ่าน
-  sb.auth.onAuthStateChange((event, session) => {
+    sb.auth.onAuthStateChange((event, session) => {
+      if(event === 'PASSWORD_RECOVERY'){
+        showOnly('resetPasswordScreen');
+      }
+    });
 
-    if(event === 'PASSWORD_RECOVERY'){
-      showOnly('resetPasswordScreen');
-    }
+    checkSession();
 
-  });
-
-  checkSession();
-
-}
-catch(e){
-  showOnly('authScreen');
-  toast('ตั้งค่า Supabase ไม่ถูกต้อง: '+e.message);
+  } catch(e) {
+    console.error(e);
+    showOnly('authScreen');
+    toast('ตั้งค่า Supabase ไม่ถูกต้อง: ' + e.message);
+  }
 }
 
 async function checkSession(){try{const{data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){user=data.session.user;await afterLogin()}else showOnly('authScreen')}catch(e){showOnly('authScreen');toast('ตรวจสอบการเข้าสู่ระบบไม่สำเร็จ: '+e.message)}}
