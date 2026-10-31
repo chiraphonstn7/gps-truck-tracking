@@ -133,14 +133,40 @@
     <strong id="statProblem" style="color:#dc2626">0</strong>
   </div>
 </div>
-<div class="card" id="gpsAlertCard" style="margin-bottom:16px">
-  <h2>🔔 แจ้งเตือนรถออฟไลน์</h2>
-  <p class="small muted">
-    รถที่ไม่ได้ส่ง GPS เกิน 15 นาที
-  </p>
-  <div id="gpsAlertList" class="list">
-    <div class="empty">กำลังตรวจสอบสถานะ GPS...</div>
+<div class="card gps-alert-card" id="gpsAlertCard">
+
+  <div class="gps-alert-header">
+
+    <div>
+      <div class="gps-alert-title">
+        🔔 แจ้งเตือนรถออฟไลน์
+
+        <span id="gpsAlertCount" class="gps-alert-count">
+          0 คัน
+        </span>
+      </div>
+
+      <div class="small muted" style="margin-top:5px">
+        รถที่ไม่ได้ส่ง GPS เกิน 15 นาที
+      </div>
+    </div>
+
+    <button
+      id="gpsAlertToggle"
+      class="gps-alert-toggle">
+      ดูรายการ
+    </button>
+
   </div>
+
+  <div id="gpsAlertList" class="gps-alert-list">
+
+    <div class="empty">
+      กำลังตรวจสอบสถานะ GPS...
+    </div>
+
+  </div>
+
 </div>
 
 <div class="grid"><div class="card">
