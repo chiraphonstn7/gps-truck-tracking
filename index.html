@@ -344,6 +344,98 @@ function setup(){
   catch(e){ showOnly('authScreen'); toast('ตั้งค่า Supabase ไม่ถูกต้อง: '+e.message); }
 }
 async function checkSession(){try{const{data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){user=data.session.user;await afterLogin()}else showOnly('authScreen')}catch(e){showOnly('authScreen');toast('ตรวจสอบการเข้าสู่ระบบไม่สำเร็จ: '+e.message)}}
+
+// เปิดหน้าลืมรหัสผ่าน
+$('forgotPasswordLink').onclick = (e) => {
+  e.preventDefault();
+  $('resetEmail').value = $('email').value.trim();
+  showOnly('forgotPasswordScreen');
+};
+
+// กลับไปหน้าเข้าสู่ระบบ
+$('backToLogin').onclick = (e) => {
+  e.preventDefault();
+  showOnly('authScreen');
+};
+
+// ส่งอีเมลรีเซ็ตรหัสผ่าน
+async function sendResetEmail(){
+  const email = $('resetEmail').value.trim();
+
+  if(!email){
+    toast('กรุณากรอกอีเมล');
+    return;
+  }
+
+  try{
+    const {error} = await sb.auth.resetPasswordForEmail(email,{
+      redirectTo: window.location.origin + window.location.pathname
+    });
+
+    if(error) throw error;
+
+    toast('ส่งลิงก์รีเซ็ตรหัสผ่านแล้ว กรุณาตรวจสอบอีเมล');
+
+  }catch(e){
+    console.error(e);
+    toast('ส่งอีเมลไม่สำเร็จ: '+e.message);
+  }
+}
+
+// บันทึกรหัสผ่านใหม่
+async function saveNewPassword(){
+  const password = $('resetNewPassword').value;
+  const confirm = $('resetConfirmPassword').value;
+
+  if(!password || !confirm){
+    toast('กรุณากรอกรหัสผ่านให้ครบ');
+    return;
+  }
+
+  if(password.length < 8){
+    toast('รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร');
+    return;
+  }
+
+  if(password !== confirm){
+    toast('รหัสผ่านใหม่ไม่ตรงกัน');
+    return;
+  }
+
+  try{
+    const {error} = await sb.auth.updateUser({
+      password: password
+    });
+
+    if(error) throw error;
+
+    $('resetNewPassword').value = '';
+    $('resetConfirmPassword').value = '';
+
+    toast('เปลี่ยนรหัสผ่านสำเร็จ กรุณาเข้าสู่ระบบใหม่');
+
+    await sb.auth.signOut();
+
+    user = null;
+    profile = null;
+    vehicles = [];
+    shipments = [];
+
+    $('logoutBtn').classList.add('hidden');
+    $('userLabel').textContent = '';
+
+    showOnly('authScreen');
+
+  }catch(e){
+    console.error(e);
+    toast('เปลี่ยนรหัสผ่านไม่สำเร็จ: '+e.message);
+  }
+}
+
+// ผูกปุ่มกับฟังก์ชัน
+$('sendResetBtn').onclick = sendResetEmail;
+$('saveNewPasswordBtn').onclick = saveNewPassword;
+
 async function afterLogin(){try{const{data,error}=await sb.from('profiles').select('id,email,role').eq('id',user.id).maybeSingle();if(error)console.warn('profiles:',error.message);profile=data||{id:user.id,role:'customer'};$('userLabel').textContent=user.email||'';$('logoutBtn').classList.remove('hidden');$('manageTab').classList.toggle('hidden',profile.role!=='admin');showOnly('appScreen');await loadData();initMap();switchTab('dashboard');if(refreshTimer)clearInterval(refreshTimer);refreshTimer=setInterval(()=>loadData(false),10000)}catch(e){toast('เปิดระบบไม่สำเร็จ: '+e.message);showOnly('authScreen')}}
 async function authAction(mode){const email=$('email').value.trim(),password=$('password').value;if(!email||!password){toast('กรอกอีเมลและรหัสผ่านก่อน');return}if(mode==='signup'&&password.length<6){toast('รหัสผ่านต้องมีอย่างน้อย 6 ตัว');return}try{const res=mode==='login'?await sb.auth.signInWithPassword({email,password}):await sb.auth.signUp({email,password,options:{data:{full_name:email.split('@')[0]}}});if(res.error)throw res.error;if(mode==='signup'&&!res.data.session){toast('สมัครแล้ว กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ');return}user=res.data.user;if(user)await afterLogin()}catch(e){toast('เข้าสู่ระบบ/สมัครสมาชิกไม่สำเร็จ: '+e.message)}}
 function switchTab(name){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));['dashboard','driver','shipments','manage'].forEach(x=>$(x+'Panel').classList.toggle('hidden',x!==name));if(name==='dashboard'&&map)setTimeout(()=>map.invalidateSize(),100)}
