@@ -331,14 +331,7 @@ function showOnly(id){
     $(x).classList.toggle('hidden',x!==id);
   });
 }
-function setup(){
-  if(!SUPABASE_URL.startsWith('https://') || SUPABASE_URL.includes('ใส่_') || !SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('ใส่_')){
-    showOnly('authScreen');
-    toast('ยังไม่ได้ตั้งค่า Supabase: แก้ SUPABASE_URL และ SUPABASE_ANON_KEY ในโค้ดก่อน');
-    $('loginBtn').disabled=true; $('signupBtn').disabled=true;
-    return;
-  }
-  
+
 try {
   sb = window.supabase.createClient(
     SUPABASE_URL,
@@ -362,8 +355,6 @@ catch(e){
   toast('ตั้งค่า Supabase ไม่ถูกต้อง: '+e.message);
 }
 
-  catch(e){ showOnly('authScreen'); toast('ตั้งค่า Supabase ไม่ถูกต้อง: '+e.message); }
-}
 async function checkSession(){try{const{data,error}=await sb.auth.getSession();if(error)throw error;if(data.session){user=data.session.user;await afterLogin()}else showOnly('authScreen')}catch(e){showOnly('authScreen');toast('ตรวจสอบการเข้าสู่ระบบไม่สำเร็จ: '+e.message)}}
 
 // เปิดหน้าลืมรหัสผ่าน
