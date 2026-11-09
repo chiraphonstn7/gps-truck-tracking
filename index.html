@@ -566,6 +566,29 @@ function getLastSeenText(v){
 
   return 'ตำแหน่งล่าสุด: '+
     new Date(timestamp).toLocaleString('th-TH');
+} // แปลงระยะเวลาขาด GPS เป็น วัน ชั่วโมง นาที วินาที
+function formatElapsed(milliseconds){
+
+  let seconds = Math.max(0, Math.floor(milliseconds / 1000));
+
+  const days = Math.floor(seconds / 86400);
+  seconds %= 86400;
+
+  const hours = Math.floor(seconds / 3600);
+  seconds %= 3600;
+
+  const minutes = Math.floor(seconds / 60);
+  seconds %= 60;
+
+  const parts = [];
+
+  if(days > 0) parts.push(days + ' วัน');
+  if(hours > 0) parts.push(hours + ' ชั่วโมง');
+  if(minutes > 0) parts.push(minutes + ' นาที');
+
+  parts.push(seconds + ' วินาที');
+
+  return parts.join(' ');
 }
 function renderDriverShipmentSummary(){
 
