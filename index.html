@@ -818,9 +818,9 @@ function renderGpsAlerts(){
 
       const lastSeen = new Date(getGpsTimestamp(v));
 
-      const minutes = Math.max(0, Math.floor(
-        (Date.now() - lastSeen.getTime()) / 60000
-      ));
+      const elapsed = formatElapsed(
+  Date.now() - lastSeen.getTime()
+);
 
       return `
         <div class="gps-alert-item">
